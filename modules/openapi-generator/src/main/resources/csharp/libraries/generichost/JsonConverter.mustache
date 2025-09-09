@@ -628,7 +628,7 @@
                 if ({{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value != null)
                 {
                     writer.WritePropertyName("{{baseName}}");
-                    JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+                    JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value, jsonSerializerOptions);
                 }
                 else
                     writer.WriteNull("{{baseName}}");
@@ -636,7 +636,7 @@
             {{^isNullable}}
             {
                 writer.WritePropertyName("{{baseName}}");
-                JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}, jsonSerializerOptions);
+                JsonSerializer.Serialize(writer, {{#lambda.camelcase_sanitize_param}}{{classname}}{{/lambda.camelcase_sanitize_param}}.{{name}}Option.Value, jsonSerializerOptions);
             }
             {{/isNullable}}
             {{/required}}
