@@ -469,31 +469,44 @@ namespace {{packageName}}.{{apiPackage}}
                     {{/headerParams}}
                     {{#formParams}}
                     {{#-first}}
-                    MultipartContent multipartContentLocalVar = new MultipartContent();
+                    MultipartFormDataContent multipartContentLocalVar = new MultipartFormDataContent();
 
                     httpRequestMessageLocalVar.Content = multipartContentLocalVar;
-
-                    List<KeyValuePair<string{{nrt?}}, string{{nrt?}}>> formParameterLocalVars = new List<KeyValuePair<string{{nrt?}}, string{{nrt?}}>>();
-
-                    multipartContentLocalVar.Add(new FormUrlEncodedContent(formParameterLocalVars));{{/-first}}{{^isFile}}{{#required}}
-
-                    formParameterLocalVars.Add(new KeyValuePair<string{{nrt?}}, string{{nrt?}}>("{{baseName}}", ClientUtils.ParameterToString({{paramName}})));
+                    {{/-first}}
+                    {{^isFile}}{{#required}}
+                    multipartContentLocalVar.Add(new StringContent(ClientUtils.ParameterToString({{paramName}})), "{{baseName}}");
 
                     {{/required}}
                     {{^required}}
                     if ({{paramName}}.IsSet)
-                        formParameterLocalVars.Add(new KeyValuePair<string{{nrt?}}, string{{nrt?}}>("{{baseName}}", ClientUtils.ParameterToString({{paramName}}.Value)));
+                        multipartContentLocalVar.Add(new StringContent(ClientUtils.ParameterToString({{paramName}}.Value)), "{{baseName}}");
 
                     {{/required}}
                     {{/isFile}}
                     {{#isFile}}
                     {{#required}}
-                    multipartContentLocalVar.Add(new StreamContent({{paramName}}));
+                    {
+                        var streamLocalVar = {{paramName}};
+                        var fileContentLocalVar = new StreamContent(streamLocalVar);
+                        string fileNameLocalVar = "upload";
+                        if (streamLocalVar is System.IO.FileStream fsLocalVar)
+                            fileNameLocalVar = System.IO.Path.GetFileName(fsLocalVar.Name);
+                        fileContentLocalVar.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data") { Name = "{{baseName}}", FileName = fileNameLocalVar };
+                        multipartContentLocalVar.Add(fileContentLocalVar, "{{baseName}}", fileNameLocalVar);
+                    }
 
                     {{/required}}
                     {{^required}}
                     if ({{paramName}}.IsSet)
-                        multipartContentLocalVar.Add(new StreamContent({{paramName}}.Value));
+                    {
+                        var streamLocalVar = {{paramName}}.Value;
+                        var fileContentLocalVar = new StreamContent(streamLocalVar);
+                        string fileNameLocalVar = "upload";
+                        if (streamLocalVar is System.IO.FileStream fsLocalVar)
+                            fileNameLocalVar = System.IO.Path.GetFileName(fsLocalVar.Name);
+                        fileContentLocalVar.Headers.ContentDisposition = new System.Net.Http.Headers.ContentDispositionHeaderValue("form-data") { Name = "{{baseName}}", FileName = fileNameLocalVar };
+                        multipartContentLocalVar.Add(fileContentLocalVar, "{{baseName}}", fileNameLocalVar);
+                    }
 
                     {{/required}}
                     {{/isFile}}
@@ -587,7 +600,7 @@ namespace {{packageName}}.{{apiPackage}}
 
                     string{{nrt?}} contentTypeLocalVar = ClientUtils.SelectHeaderContentType(contentTypes);
 
-                    if (contentTypeLocalVar != null && httpRequestMessageLocalVar.Content != null)
+                    if (contentTypeLocalVar != null && httpRequestMessageLocalVar.Content != null && !(httpRequestMessageLocalVar.Content is MultipartFormDataContent))
                         httpRequestMessageLocalVar.Content.Headers.ContentType = new MediaTypeHeaderValue(contentTypeLocalVar);
 
                     {{/-first}}
