@@ -384,9 +384,16 @@ namespace {{packageName}}.{{apiPackage}}
                     uriBuilderLocalVar.Host = HttpClient.BaseAddress{{nrt!}}.Host;
                     uriBuilderLocalVar.Port = HttpClient.BaseAddress.Port;
                     uriBuilderLocalVar.Scheme = HttpClient.BaseAddress.Scheme;
+                    var _fullPathLocalVar = "{{{path}}}";
+                    var _pathLocalVar = _fullPathLocalVar;
+                    string _queryLocalVar = null;
+                    var _qIdx = _fullPathLocalVar.IndexOf("?");
+                    if (_qIdx >= 0) { _pathLocalVar = _fullPathLocalVar.Substring(0, _qIdx); _queryLocalVar = _fullPathLocalVar.Substring(_qIdx + 1); }
+
                     uriBuilderLocalVar.Path = HttpClient.BaseAddress.AbsolutePath == "/"
-                        ? "{{{path}}}"
-                        : string.Concat(HttpClient.BaseAddress.AbsolutePath, "{{{path}}}");
+                        ? _pathLocalVar
+                        : string.Concat(HttpClient.BaseAddress.AbsolutePath, _pathLocalVar);
+                    if (_queryLocalVar != null) { uriBuilderLocalVar.Query = _queryLocalVar; }
                     {{/servers}}
                     {{#servers}}
                     {{#-first}}
