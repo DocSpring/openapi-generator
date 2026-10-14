@@ -2046,6 +2046,7 @@ public abstract class AbstractPythonCodegen extends DefaultCodegen implements Co
 
             if (cp.getIsEnum()) {
                 moduleImports.add("pydantic", "field_validator");
+                moduleImports.add("pydantic", "ValidationInfo");
             }
 
             if (cp.getIsArray()) {
