@@ -681,9 +681,8 @@ func (o *{{{classname}}}) UnmarshalJSON(data []byte) (err error) {
 {{/vendorExtensions.x-go-flattened-vars}}
 	}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	if err = decoder.Decode(&decoded); err != nil {
+	// Ignore unknown fields, so a field added to the API later doesn't break this client.
+	if err = json.Unmarshal(data, &decoded); err != nil {
 		return err
 	}
 
@@ -696,9 +695,8 @@ func (o *{{{classname}}}) UnmarshalJSON(data []byte) (err error) {
 {{^vendorExtensions.x-go-inherited-string-enum-validation}}
 	var{{{classname}}} := _{{{classname}}}{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&var{{{classname}}})
+	// Ignore unknown fields, so a field added to the API later doesn't break this client.
+	err = json.Unmarshal(data, &var{{{classname}}})
 
 	if err != nil {
 		return err
