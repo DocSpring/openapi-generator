@@ -547,9 +547,8 @@ func (o *{{{classname}}}) UnmarshalJSON(data []byte) (err error) {
 {{#hasRequired}}
 	var{{{classname}}} := _{{{classname}}}{}
 
-	decoder := json.NewDecoder(bytes.NewReader(data))
-	decoder.DisallowUnknownFields()
-	err = decoder.Decode(&var{{{classname}}})
+	// Ignore unknown fields, so a field added to the API later doesn't break this client.
+	err = json.Unmarshal(data, &var{{{classname}}})
 
 	if err != nil {
 		return err
