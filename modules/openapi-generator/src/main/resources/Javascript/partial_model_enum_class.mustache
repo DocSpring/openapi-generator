@@ -9,7 +9,7 @@ export default class {{classname}} {
          * value: {{{value}}}
          * @const
          */{{/emitJSDoc}}
-        "{{name}}" = {{{value}}};
+        static "{{name}}" = {{{value}}};
 
     {{/enumVars}}{{/allowableValues}}
 
@@ -19,6 +19,7 @@ export default class {{classname}} {
     * @return {{=< >=}}{module:<#invokerPackage><invokerPackage>/</invokerPackage><#modelPackage><modelPackage>/</modelPackage><classname>}<={{ }}=> The enum <code>{{classname}}</code> value.
     */{{/emitJSDoc}}
     static constructFromObject(object) {
+        // Any value, including one added to the API after this client was released
         return object;
     }
 }
