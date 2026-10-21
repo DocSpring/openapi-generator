@@ -640,6 +640,19 @@ public abstract class AbstractCSharpCodegen extends DefaultCodegen {
                             model.discriminator.getMappedModels() != null &&
                             model.discriminator.getMappedModels().size() > 0);
 
+            // Several discriminator values can map to one model, and the JsonConverter declares and returns one
+            // variable per model, so it iterates this list (each model once, in mapping order)
+            if (model.discriminator != null && model.discriminator.getMappedModels() != null) {
+                Set<String> seenModels = new HashSet<>();
+                List<CodegenDiscriminator.MappedModel> uniqueMappedModels = new ArrayList<>();
+                for (CodegenDiscriminator.MappedModel mappedModel : model.discriminator.getMappedModels()) {
+                    if (seenModels.add(mappedModel.getModelName())) {
+                        uniqueMappedModels.add(mappedModel);
+                    }
+                }
+                model.discriminator.getVendorExtensions().put("x-unique-mapped-models", uniqueMappedModels);
+            }
+
             if (model.isEnum) {
                 enumRefs.put(model.getClassname(), model);
             }
