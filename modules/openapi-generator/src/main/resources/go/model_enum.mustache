@@ -46,7 +46,10 @@ func (v *{{{classname}}}) UnmarshalJSON(src []byte) error {
 	{{/allowableValues}}
 	{{/enumUnknownDefaultCase}}
 	{{^enumUnknownDefaultCase}}
-	return fmt.Errorf("%+v is not a valid {{classname}}", value)
+	// A value added to the API after this client was released, as in a response, is kept as it is. IsValid says
+	// whether it's one of the values this client knows.
+	*v = enumTypeValue
+	return nil
 	{{/enumUnknownDefaultCase}}
 }
 
