@@ -124,11 +124,16 @@ func (o *{{{classname}}}) UnmarshalJSON(data []byte) error {
 // This constructor will assign default values to properties that have it defined,
 // and makes sure properties required by API are set, but the set of arguments
 // will change when the set of required properties is changed
-func New{{classname}}({{#requiredVars}}{{nameInCamelCase}} {{dataType}}{{^-last}}, {{/-last}}{{/requiredVars}}) *{{classname}} {
+func New{{classname}}({{#vendorExtensions.x-go-constructor-vars}}{{nameInCamelCase}} {{dataType}}{{^-last}}, {{/-last}}{{/vendorExtensions.x-go-constructor-vars}}) *{{classname}} {
 	this := {{classname}}{}
 {{#allVars}}
 {{#required}}
+{{#vendorExtensions.x-const-value}}
+	this.{{name}} = {{{defaultValue}}}
+{{/vendorExtensions.x-const-value}}
+{{^vendorExtensions.x-const-value}}
 	this.{{name}} = {{nameInCamelCase}}
+{{/vendorExtensions.x-const-value}}
 {{/required}}
 {{^required}}
 {{#defaultValue}}
@@ -421,7 +426,12 @@ func (o {{classname}}) ToMap() (map[string]interface{}, error) {
 	{{/defaultValue}}
 	{{/isReadOnly}}
 	{{/useDefaultValuesForRequiredVars}}
+	{{#vendorExtensions.x-const-value}}
+	toSerialize["{{{baseName}}}"] = {{{defaultValue}}}
+	{{/vendorExtensions.x-const-value}}
+	{{^vendorExtensions.x-const-value}}
 	toSerialize["{{{baseName}}}"] = o.{{name}}
+	{{/vendorExtensions.x-const-value}}
 	{{/required}}
 	{{^required}}
 	if !IsNil(o.{{name}}) {
