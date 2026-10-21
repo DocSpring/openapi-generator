@@ -1724,9 +1724,41 @@ public class CSharpClientCodegen extends AbstractCSharpCodegen {
                     cm.allVars.add(cp);
                 }
             }
+
+            renameOpenEnumVarsThatClash(cm);
         }
 
         return objs;
+    }
+
+    /**
+     * With openEnumTypes, a string enum type in generichost is a struct with a static property per value
+     * (modelEnumOpen.mustache). A value whose property would have the name of one of the struct's own members (the
+     * value {@code equals} becomes {@code Equals}), or of the struct itself, doesn't compile, so its property gets a
+     * {@code Value} suffix ({@code EqualsValue}).
+     */
+    @SuppressWarnings("unchecked")
+    private void renameOpenEnumVarsThatClash(CodegenModel cm) {
+        if (!cm.isEnum || !cm.isString || !GENERICHOST.equals(getLibrary()) || cm.allowableValues == null
+                || !Boolean.parseBoolean(String.valueOf(additionalProperties.get("openEnumTypes")))) {
+            return;
+        }
+
+        Set<String> memberNames = new HashSet<>(Arrays.asList(
+                "Equals", "GetHashCode", "ToString", "GetType", "ReferenceEquals", "MemberwiseClone", "Finalize",
+                "Values", "IsKnown", cm.classname));
+        List<Map<String, Object>> enumVars = (List<Map<String, Object>>) cm.allowableValues.get("enumVars");
+        if (enumVars == null) {
+            return;
+        }
+        for (Map<String, Object> enumVar : enumVars) {
+            Object name = enumVar.get("name");
+            if (name instanceof String && memberNames.contains(name)) {
+                LOGGER.info("{}: the value {} is named {}Value, as {} is a member of the enum type",
+                        cm.classname, enumVar.get("value"), name, name);
+                enumVar.put("name", name + "Value");
+            }
+        }
     }
 
 
