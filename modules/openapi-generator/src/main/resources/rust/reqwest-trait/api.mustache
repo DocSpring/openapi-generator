@@ -530,17 +530,37 @@ impl {{classname}} for {{classname}}Client {
             {{/supportMultipleResponses}}
         } else {
             // The error enum is untagged, so decoding the body alone would pick the first variant its shape fits:
-            // the response's status picks the variant instead
+            // the response's status picks the variant instead. Exact codes come before ranges (4XX), which match
+            // what's left of theirs, and a response without a body gives its variant without decoding one.
             let local_var_entity: Option<{{{operationIdCamelCase}}}Error> = match local_var_status.as_u16() {
                 {{#responses}}
+                {{^isRange}}
                 {{#is4xx}}
-                {{code}} => serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::Status{{code}}),
+                {{code}} => {{#dataType}}serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::Status{{code}}){{/dataType}}{{^dataType}}Some({{{operationIdCamelCase}}}Error::Status{{code}}()){{/dataType}},
                 {{/is4xx}}
                 {{#is5xx}}
-                {{code}} => serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::Status{{code}}),
+                {{code}} => {{#dataType}}serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::Status{{code}}){{/dataType}}{{^dataType}}Some({{{operationIdCamelCase}}}Error::Status{{code}}()){{/dataType}},
                 {{/is5xx}}
+                {{/isRange}}
                 {{/responses}}
-                _ => serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::{{#hasDefaultResponse}}DefaultResponse{{/hasDefaultResponse}}{{^hasDefaultResponse}}UnknownValue{{/hasDefaultResponse}}),
+                {{#responses}}
+                {{#isRange}}
+                {{#is4xx}}
+                400..=499 => {{#dataType}}serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::Status{{code}}){{/dataType}}{{^dataType}}Some({{{operationIdCamelCase}}}Error::Status{{code}}()){{/dataType}},
+                {{/is4xx}}
+                {{#is5xx}}
+                500..=599 => {{#dataType}}serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::Status{{code}}){{/dataType}}{{^dataType}}Some({{{operationIdCamelCase}}}Error::Status{{code}}()){{/dataType}},
+                {{/is5xx}}
+                {{/isRange}}
+                {{/responses}}
+                {{#responses}}
+                {{#isDefault}}
+                _ => {{#dataType}}serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::DefaultResponse){{/dataType}}{{^dataType}}Some({{{operationIdCamelCase}}}Error::DefaultResponse()){{/dataType}},
+                {{/isDefault}}
+                {{/responses}}
+                {{^hasDefaultResponse}}
+                _ => serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::UnknownValue),
+                {{/hasDefaultResponse}}
             };
             let local_var_error = ResponseContent { status: local_var_status, headers: local_var_headers, content: local_var_content, entity: local_var_entity };
             Err(Error::ResponseError(local_var_error))
