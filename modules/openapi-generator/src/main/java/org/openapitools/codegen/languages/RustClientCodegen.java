@@ -290,16 +290,18 @@ public class RustClientCodegen extends AbstractRustCodegen implements CodegenCon
                             Collectors.mapping(Map.Entry::getKey, Collectors.toList())
                     ));
 
-            // Several discriminator values can map to one schema (`gt` and `lt` are both comparisons). The union then
-            // names its variants after their schemas, and each variant takes all of its values
-            // (x-rust-discriminator-values, which the template's Deserialize matches).
-            boolean sharedVariants = mappedNamesByRef.values().stream().anyMatch(names -> names.size() > 1);
+            // A union names each variant after its schema, and the variant takes every discriminator value that maps
+            // to that schema (x-rust-discriminator-values, which the template's Deserialize matches): `gt` and `lt`
+            // can both be comparisons. Variants named after their values would all be renamed as soon as one schema
+            // got a second value. A schema the oneOf lists more than once still gets a variant per value.
+            Map<String, Long> refCounts = schemas.stream().map(Schema::get$ref).filter(Objects::nonNull)
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
 
             for (int i = 0; i < newOneOfs.size(); i++) {
                 CodegenProperty oneOf = newOneOfs.get(i);
                 Schema schema = schemas.get(i);
 
-                if (sharedVariants && mappedNamesByRef.containsKey(schema.get$ref())) {
+                if (mappedNamesByRef.containsKey(schema.get$ref()) && refCounts.get(schema.get$ref()) == 1) {
                     List<String> names = mappedNamesByRef.get(schema.get$ref());
                     oneOf.setBaseName(names.get(0));
                     oneOf.setName(toModelName(ModelUtils.getSimpleRef(schema.get$ref())));
