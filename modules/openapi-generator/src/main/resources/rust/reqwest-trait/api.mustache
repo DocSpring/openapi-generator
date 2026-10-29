@@ -192,7 +192,7 @@ impl {{classname}} for {{classname}}Client {
         local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", &serde_json::to_string(&{{{paramName}}})?)]);
         {{/isMap}}
         {{^isMap}}
-        local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", &{{{paramName}}}.to_string())]);
+        local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", &{{{paramName}}}{{#useChrono}}{{#isDateTime}}.to_rfc3339(){{/isDateTime}}{{^isDateTime}}.to_string(){{/isDateTime}}{{/useChrono}}{{^useChrono}}.to_string(){{/useChrono}})]);
         {{/isMap}}
         {{/isNullable}}
         {{#isNullable}}
@@ -237,7 +237,7 @@ impl {{classname}} for {{classname}}Client {
         {{/isMap}}
         {{^isMap}}
         if let Some(ref param_value) = {{{paramName}}} {
-            local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", &param_value.to_string())]);
+            local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", &param_value{{#useChrono}}{{#isDateTime}}.to_rfc3339(){{/isDateTime}}{{^isDateTime}}.to_string(){{/isDateTime}}{{/useChrono}}{{^useChrono}}.to_string(){{/useChrono}})]);
         };
         {{/isMap}}
         {{/isModel}}
@@ -283,7 +283,7 @@ impl {{classname}} for {{classname}}Client {
             local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", &serde_json::to_string(param_value)?)]);
             {{/isMap}}
             {{^isMap}}
-            local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", &param_value.to_string())]);
+            local_var_req_builder = local_var_req_builder.query(&[("{{{baseName}}}", &param_value{{#useChrono}}{{#isDateTime}}.to_rfc3339(){{/isDateTime}}{{^isDateTime}}.to_string(){{/isDateTime}}{{/useChrono}}{{^useChrono}}.to_string(){{/useChrono}})]);
             {{/isMap}}
             {{/isModel}}
             {{/isObject}}
