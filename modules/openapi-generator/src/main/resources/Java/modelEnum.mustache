@@ -26,6 +26,108 @@ import java.net.URI;
 @JsonbTypeSerializer({{datatypeWithEnum}}.Serializer.class)
 @JsonbTypeDeserializer({{datatypeWithEnum}}.Deserializer.class)
 {{/jsonb}}
+{{#openEnumTypes}}
+{{>additionalEnumTypeAnnotations}}public final class {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}} {
+  // The values this client knows, in order. Declared first, so it's there when the constants register.
+  private static final Map<{{{dataType}}}, {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}}> KNOWN = new java.util.LinkedHashMap<>();
+{{#allowableValues}}{{#enumVars}}
+
+  {{#enumDescription}}
+  /**
+   * {{.}}
+   */
+  {{/enumDescription}}
+  public static final {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}} {{{name}}} = known({{{value}}});
+{{/enumVars}}{{/allowableValues}}
+
+  private final {{{dataType}}} value;
+
+  private {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}}({{{dataType}}} value) {
+    this.value = value;
+  }
+
+  private static {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}} known({{{dataType}}} value) {
+    {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}} constant = new {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}}(value);
+    KNOWN.put(value, constant);
+    return constant;
+  }
+
+{{#jackson}}
+  @JsonValue
+{{/jackson}}
+  public {{{dataType}}} getValue() {
+    return value;
+  }
+
+  @Override
+  public String toString() {
+    return String.valueOf(value);
+  }
+
+  /**
+   * Whether the value is one this client knows: a newer API can return values added after it was released.
+   *
+   * @return true for one of the constants
+   */
+  public boolean isKnown() {
+    return KNOWN.get(value) == this;
+  }
+
+  /**
+   * The values this client knows.
+   *
+   * @return the constants, in order
+   */
+  public static java.util.Collection<{{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}}> values() {
+    return java.util.Collections.unmodifiableCollection(KNOWN.values());
+  }
+
+  /**
+   * The constant for a value, or for a value added to the API after this client was released, an instance that keeps
+   * it as it is.
+   *
+   * @param value the value
+   * @return the instance, or null for null
+   */
+{{#jackson}}
+  @JsonCreator
+{{/jackson}}
+  public static {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}} fromValue({{{dataType}}} value) {
+    if (value == null) {
+      return null;
+    }
+    {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}} constant = KNOWN.get(value);
+    return constant != null ? constant : new {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}}(value);
+  }
+
+  @Override
+  public boolean equals(Object other) {
+    return this == other || (other instanceof {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}} && Objects.equals(value, (({{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}}) other).value));
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hashCode(value);
+  }
+{{#supportUrlQuery}}
+
+  /**
+   * Convert the instance into URL query string.
+   *
+   * @param prefix prefix of the query string
+   * @return URL query string
+   */
+  public String toUrlQueryString(String prefix) {
+    if (prefix == null) {
+      prefix = "";
+    }
+
+    return String.format(java.util.Locale.ROOT, "%s=%s", prefix, this.toString());
+  }
+{{/supportUrlQuery}}
+}
+{{/openEnumTypes}}
+{{^openEnumTypes}}
 {{>additionalEnumTypeAnnotations}}public enum {{{datatypeWithEnum}}}{{^datatypeWithEnum}}{{{classname}}}{{/datatypeWithEnum}}{{#vendorExtensions.x-implements}}{{#-first}} implements {{{.}}}{{/-first}}{{^-first}}, {{{.}}}{{/-first}}{{/vendorExtensions.x-implements}} {
   {{#allowableValues}}{{#enumVars}}
     {{#enumDescription}}
@@ -121,3 +223,4 @@ import java.net.URI;
   }
 {{/supportUrlQuery}}
 }
+{{/openEnumTypes}}
