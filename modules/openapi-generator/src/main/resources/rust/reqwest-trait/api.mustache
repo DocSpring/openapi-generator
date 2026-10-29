@@ -402,14 +402,14 @@ impl {{classname}} for {{classname}}Client {
         let mut local_var_form = reqwest::multipart::Form::new();
         {{#formParams}}
         {{#isFile}}
-        {{^isRequired}}
-        if let Some(ref path) = {{{baseName}}} {
+        {{^required}}
+        if let Some(ref path) = {{{paramName}}} {
             local_var_form = local_var_form.file("{{{baseName}}}", path.as_os_str()).await?;
         }
-        {{/isRequired}}
-        {{#isRequired}}
-            local_var_form = local_var_form.file("{{{baseName}}}", {{{baseName}}}.as_os_str()).await?;
-        {{/isRequired}}
+        {{/required}}
+        {{#required}}
+        local_var_form = local_var_form.file("{{{baseName}}}", {{{paramName}}}.as_os_str()).await?;
+        {{/required}}
         {{/isFile}}
         {{^isFile}}
         {{#required}}
