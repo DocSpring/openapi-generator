@@ -7,6 +7,8 @@ use aws_sigv4;
 #[derive(Debug, Clone)]
 pub struct ResponseContent<T> {
     pub status: reqwest::StatusCode,
+    /// The response's headers, such as `Retry-After`
+    pub headers: reqwest::header::HeaderMap,
     pub content: String,
     pub entity: Option<T>,
 }
@@ -37,7 +39,9 @@ impl <T> fmt::Display for Error<T> {
             {{/supportMiddleware}}
             Error::Serde(e) => ("serde", e.to_string()),
             Error::Io(e) => ("IO", e.to_string()),
-            Error::ResponseError(e) => ("response", format!("status code {}", e.status)),
+            // The body has the API's explanation, such as which values it refused
+            Error::ResponseError(e) if e.content.is_empty() => ("response", format!("status code {}", e.status)),
+            Error::ResponseError(e) => ("response", format!("status code {}: {}", e.status, e.content)),
             {{#withAWSV4Signature}}
             Error::AWSV4SignatureError(e) => ("aws v4 signature", e.to_string()),
             {{/withAWSV4Signature}}
