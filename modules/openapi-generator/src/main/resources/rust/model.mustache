@@ -45,6 +45,94 @@ impl std::fmt::Display for {{{classname}}} {
 {{!-- for enum schemas --}}
 {{#isEnum}}
 {{^isInteger}}
+{{#openEnumTypes}}
+/// {{{description}}}
+///
+/// A value added to the API after this release is `Unknown`, with the value as the API sent it. A later release can
+/// add variants, so a `match` needs a wildcard arm.
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd, Hash)]
+#[non_exhaustive]
+pub enum {{{classname}}} {
+{{#allowableValues}}
+{{#enumVars}}
+    {{{name}}},
+{{/enumVars}}{{/allowableValues}}
+    /// A value this release doesn't know, as the API sent it
+    Unknown(String),
+}
+
+impl {{{classname}}} {
+    /// The values this release knows
+    pub const VALUES: &'static [{{{classname}}}] = &[{{#allowableValues}}{{#enumVars}}Self::{{{name}}}{{^-last}}, {{/-last}}{{/enumVars}}{{/allowableValues}}];
+
+    /// The value as the API sends it
+    pub fn as_str(&self) -> &str {
+        match self {
+            {{#allowableValues}}
+            {{#enumVars}}
+            Self::{{{name}}} => "{{{value}}}",
+            {{/enumVars}}
+            {{/allowableValues}}
+            Self::Unknown(value) => value,
+        }
+    }
+
+    /// Whether the value is one this release knows: a newer API can return values added after it
+    pub fn is_known(&self) -> bool {
+        !matches!(self, Self::Unknown(_))
+    }
+}
+
+impl From<&str> for {{{classname}}} {
+    fn from(value: &str) -> Self {
+        match value {
+            {{#allowableValues}}
+            {{#enumVars}}
+            "{{{value}}}" => Self::{{{name}}},
+            {{/enumVars}}
+            {{/allowableValues}}
+            _ => Self::Unknown(value.to_owned()),
+        }
+    }
+}
+
+impl From<String> for {{{classname}}} {
+    fn from(value: String) -> Self {
+        match Self::from(value.as_str()) {
+            Self::Unknown(_) => Self::Unknown(value),
+            known => known,
+        }
+    }
+}
+
+impl std::str::FromStr for {{{classname}}} {
+    type Err = std::convert::Infallible;
+
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
+        Ok(Self::from(value))
+    }
+}
+
+impl Serialize for {{{classname}}} {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(self.as_str())
+    }
+}
+
+impl<'de> Deserialize<'de> for {{{classname}}} {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        String::deserialize(deserializer).map(Self::from)
+    }
+}
+
+impl std::fmt::Display for {{{classname}}} {
+    fn fmt(&self, f: &mut std::fmt::Formatter) -> std::fmt::Result {
+        f.write_str(self.as_str())
+    }
+}
+
+{{/openEnumTypes}}
+{{^openEnumTypes}}
 /// {{{description}}}
 #[derive(Clone, Copy, Debug, Eq, PartialEq, Ord, PartialOrd, Hash, Serialize, Deserialize)]
 pub enum {{{classname}}} {
@@ -67,6 +155,7 @@ impl std::fmt::Display for {{{classname}}} {
     }
 }
 
+{{/openEnumTypes}}
 {{/isInteger}}
 impl Default for {{{classname}}} {
     fn default() -> {{{classname}}} {
