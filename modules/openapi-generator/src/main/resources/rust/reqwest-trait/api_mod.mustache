@@ -7,6 +7,8 @@ use aws_sigv4;
 #[derive(Debug, Clone)]
 pub struct ResponseContent<T> {
     pub status: reqwest::StatusCode,
+    /// The response's headers, such as `Retry-After`
+    pub headers: reqwest::header::HeaderMap,
     pub content: String,
     pub entity: Option<T>,
 }

@@ -497,6 +497,7 @@ impl {{classname}} for {{classname}}Client {
         let local_var_content_type = super::ContentType::from(local_var_content_type);
         {{/returnType}}
         {{/supportMultipleResponses}}
+        let local_var_headers = local_var_resp.headers().clone();
         let local_var_content = local_var_resp.text().await?;
 
         if !local_var_status.is_client_error() && !local_var_status.is_server_error() {
@@ -524,12 +525,24 @@ impl {{classname}} for {{classname}}Client {
             {{/supportMultipleResponses}}
             {{#supportMultipleResponses}}
             let local_var_entity: Option<{{{operationIdCamelCase}}}Success> = serde_json::from_str(&local_var_content).ok();
-            let local_var_result = ResponseContent { status: local_var_status, content: local_var_content, entity: local_var_entity };
+            let local_var_result = ResponseContent { status: local_var_status, headers: local_var_headers, content: local_var_content, entity: local_var_entity };
             Ok(local_var_result)
             {{/supportMultipleResponses}}
         } else {
-            let local_var_entity: Option<{{{operationIdCamelCase}}}Error> = serde_json::from_str(&local_var_content).ok();
-            let local_var_error = ResponseContent { status: local_var_status, content: local_var_content, entity: local_var_entity };
+            // The error enum is untagged, so decoding the body alone would pick the first variant its shape fits:
+            // the response's status picks the variant instead
+            let local_var_entity: Option<{{{operationIdCamelCase}}}Error> = match local_var_status.as_u16() {
+                {{#responses}}
+                {{#is4xx}}
+                {{code}} => serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::Status{{code}}),
+                {{/is4xx}}
+                {{#is5xx}}
+                {{code}} => serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::Status{{code}}),
+                {{/is5xx}}
+                {{/responses}}
+                _ => serde_json::from_str(&local_var_content).ok().map({{{operationIdCamelCase}}}Error::{{#hasDefaultResponse}}DefaultResponse{{/hasDefaultResponse}}{{^hasDefaultResponse}}UnknownValue{{/hasDefaultResponse}}),
+            };
+            let local_var_error = ResponseContent { status: local_var_status, headers: local_var_headers, content: local_var_content, entity: local_var_entity };
             Err(Error::ResponseError(local_var_error))
         }
     }
