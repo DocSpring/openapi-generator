@@ -10,6 +10,12 @@ import pprint
 from pydantic import StrictStr, Field
 from typing import Union, List, Set, Optional, Dict
 from typing_extensions import Literal, Self
+{{#discriminator}}
+{{#mappedModels.size}}
+from pydantic import model_validator
+from typing import Any
+{{/mappedModels.size}}
+{{/discriminator}}
 {{#compatibleWithPythonLegacy}}
 from pydantic_core import to_jsonable_python
 
@@ -54,6 +60,26 @@ class {{classname}}({{#parent}}{{{.}}}{{/parent}}{{^parent}}BaseModel{{/parent}}
             super().__init__(actual_instance=args[0])
         else:
             super().__init__(**kwargs)
+{{#discriminator}}
+{{#mappedModels.size}}
+
+    @model_validator(mode="before")
+    @classmethod
+    def from_one_of_type_or_dict(cls, data: Any) -> Any:
+        """Takes one of the oneOf types, or a dict of one, picked by its discriminator, as well as `actual_instance`"""
+        if isinstance(data, ({{#oneOf}}{{{.}}}, {{/oneOf}})):
+            return {"actual_instance": data}
+        if not isinstance(data, dict) or "actual_instance" in data:
+            return data
+
+        _discriminator_value = data.get({{#lambda.pythonStringLiteral}}{{{propertyBaseName}}}{{/lambda.pythonStringLiteral}})
+        {{#mappedModels}}
+        if _discriminator_value == {{#lambda.pythonStringLiteral}}{{{mappingName}}}{{/lambda.pythonStringLiteral}}:
+            return {"actual_instance": {{{modelName}}}.model_validate(data)}
+        {{/mappedModels}}
+        raise ValueError({{#lambda.pythonStringLiteral}}`{{{propertyBaseName}}}` must be one of: {{#mappedModels}}{{{mappingName}}}{{^-last}}, {{/-last}}{{/mappedModels}}{{/lambda.pythonStringLiteral}})
+{{/mappedModels.size}}
+{{/discriminator}}
 
     @field_validator('actual_instance')
     def actual_instance_must_validate_oneof(cls, v):
