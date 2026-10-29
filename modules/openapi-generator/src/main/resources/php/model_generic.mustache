@@ -244,9 +244,11 @@ class {{classname}} {{#parentSchema}}extends {{{parent}}}{{/parentSchema}}{{^par
         $this->setIfExists('{{name}}', $data ?? [], {{#defaultValue}}{{{defaultValue}}}{{/defaultValue}}{{^defaultValue}}null{{/defaultValue}});
         {{/vars}}
         {{#discriminator}}
+        {{^oneOf}}
 
         // Initialize discriminator property with the model name.
         $this->container['{{discriminatorName}}'] = static::$openAPIModelName;
+        {{/oneOf}}
         {{/discriminator}}
     }
 
