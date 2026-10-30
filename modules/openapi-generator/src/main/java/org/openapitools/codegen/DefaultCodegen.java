@@ -5237,6 +5237,15 @@ public class DefaultCodegen implements CodegenConfig {
             }
         }
 
+        // Header parameters go after every other parameter, the body and the form fields included (DocSpring), so an
+        // optional header added to an operation later can't move an existing argument of a method that takes its
+        // parameters by position. Required parameters still come first (sortParamsByRequiredFlag, below).
+        List<CodegenParameter> headerArguments = allParams.stream()
+                .filter(cp -> cp.isHeaderParam)
+                .collect(Collectors.toList());
+        allParams.removeIf(cp -> cp.isHeaderParam);
+        allParams.addAll(headerArguments);
+
         // create optional, required parameters
         for (CodegenParameter cp : allParams) {
             if (cp.required) { //required parameters
