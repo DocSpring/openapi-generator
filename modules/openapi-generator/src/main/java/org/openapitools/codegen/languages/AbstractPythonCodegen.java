@@ -2347,6 +2347,10 @@ public abstract class AbstractPythonCodegen extends DefaultCodegen implements Co
                         pt.setDefaultValue(cp.defaultValue);
                     }
                 }
+            } else if (cp.vendorExtensions.containsKey("x-const-value") && cp.defaultValue != null) {
+                // A required property with a fixed value (like a union variant's discriminator) defaults to it, so
+                // the caller needn't set it
+                pt.setDefaultValue(cp.defaultValue);
             }
 
             String typeConstraint = pt.asTypeConstraint(moduleImports);
