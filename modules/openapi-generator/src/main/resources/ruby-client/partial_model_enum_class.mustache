@@ -17,12 +17,14 @@
     # @param [String] The enum value in the form of the string
     # @return [String] The enum value
     def build_from_hash(value)
-      return value if {{classname}}.all_vars.include?(value)
       {{#enumUnknownDefaultCase}}
+      return value if {{classname}}.all_vars.include?(value)
       {{#allowableValues}}{{#enumVars}}{{#-last}}{{{name}}}{{/-last}}{{/enumVars}}{{/allowableValues}}
       {{/enumUnknownDefaultCase}}
       {{^enumUnknownDefaultCase}}
-      raise "Invalid ENUM value #{value} for class #{{{classname}}}"
+      # Only responses are built from hashes, and a value added to the API after this client was released is kept as it
+      # is: the constants are the values this client knows
+      value
       {{/enumUnknownDefaultCase}}
     end
   end
