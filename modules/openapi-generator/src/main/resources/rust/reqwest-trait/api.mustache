@@ -479,7 +479,14 @@ impl {{classname}} for {{classname}}Client {
         {{/isMultipart}}
         {{#hasBodyParam}}
         {{#bodyParams}}
+        {{#required}}
         local_var_req_builder = local_var_req_builder.json(&{{{paramName}}});
+        {{/required}}
+        {{^required}}
+        if let Some(ref local_var_body) = {{{paramName}}} {
+            local_var_req_builder = local_var_req_builder.json(local_var_body);
+        }
+        {{/required}}
         {{/bodyParams}}
         {{/hasBodyParam}}
 
