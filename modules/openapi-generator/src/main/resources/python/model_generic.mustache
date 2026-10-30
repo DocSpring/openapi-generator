@@ -101,8 +101,12 @@ https://github.com/OpenAPITools/openapi-generator/blob/c84b949df1a9ec04ba75989cb
     {{#isEnum}}
 
     @field_validator('{{{name}}}')
-    def {{{name}}}_validate_enum(cls, value):
+    def {{{name}}}_validate_enum(cls, value, info: ValidationInfo):
         """Validates the enum"""
+        # from_dict accepts enum values this client doesn't know about yet
+        if info.context and info.context.get("skip_enum_validation"):
+            return value
+
         {{^required}}
         if value is None:
             return value
@@ -475,7 +479,7 @@ https://github.com/OpenAPITools/openapi-generator/blob/c84b949df1a9ec04ba75989cb
             return None
 
         if not isinstance(obj, dict):
-            return cls.model_validate(obj)
+            return cls.model_validate(obj, context={"skip_enum_validation": True})
     {{/hasChildren}}
 {{#vendorExtensions.x-py-preprocesses-input-names}}
 
@@ -621,7 +625,7 @@ https://github.com/OpenAPITools/openapi-generator/blob/c84b949df1a9ec04ba75989cb
             {{/isPrimitiveType}}
             {{/isContainer}}
             {{/allVars}}
-        })
+        }, context={"skip_enum_validation": True})
         {{#isAdditionalPropertiesTrue}}
         # store additional fields in additional_properties
         for _key in obj.keys():
