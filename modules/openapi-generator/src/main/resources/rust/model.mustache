@@ -78,6 +78,57 @@ impl Default for {{{classname}}} {
 {{/isEnum}}
 {{!-- for schemas that have a discriminator --}}
 {{#discriminator}}
+{{^oneOf.isEmpty}}
+{{!-- A oneOf variant's model writes its own discriminator, which can be any of the values that map to it (`gt` or
+`lt`), so serde's tag would write a second one. The union serializes the model as it is, adding the variant's
+discriminator only when the model left it unset, and reads every value that maps to a variant. --}}
+#[derive(Clone, Debug, PartialEq)]
+pub enum {{{classname}}} {
+    {{#composedSchemas.oneOf}}
+    {{#description}}
+    /// {{{.}}}
+    {{/description}}
+    {{{name}}}({{#isModel}}{{^avoidBoxedModels}}Box<{{/avoidBoxedModels}}{{/isModel}}{{{dataType}}}{{#isModel}}{{^avoidBoxedModels}}>{{/avoidBoxedModels}}{{/isModel}}),
+    {{/composedSchemas.oneOf}}
+}
+
+impl Serialize for {{{classname}}} {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        let (mut value, discriminator) = match self {
+            {{#composedSchemas.oneOf}}
+            Self::{{{name}}}(variant) => (
+                serde_json::to_value(variant).map_err(<S::Error as serde::ser::Error>::custom)?,
+                "{{{baseName}}}",
+            ),
+            {{/composedSchemas.oneOf}}
+        };
+        if let serde_json::Value::Object(ref mut map) = value {
+            map.entry("{{{propertyBaseName}}}").or_insert_with(|| discriminator.into());
+        }
+        value.serialize(serializer)
+    }
+}
+
+impl<'de> Deserialize<'de> for {{{classname}}} {
+    fn deserialize<D: serde::Deserializer<'de>>(deserializer: D) -> Result<Self, D::Error> {
+        const VALUES: &[&str] = &[{{#composedSchemas.oneOf}}{{#vendorExtensions.x-rust-discriminator-values}}"{{{.}}}", {{/vendorExtensions.x-rust-discriminator-values}}{{/composedSchemas.oneOf}}];
+        let value = serde_json::Value::deserialize(deserializer)?;
+        let discriminator = match value.get("{{{propertyBaseName}}}") {
+            Some(serde_json::Value::String(discriminator)) => discriminator.clone(),
+            _ => return Err(<D::Error as serde::de::Error>::missing_field("{{{propertyBaseName}}}")),
+        };
+        match discriminator.as_str() {
+            {{#composedSchemas.oneOf}}
+            {{#vendorExtensions.x-rust-discriminator-values}}"{{{.}}}"{{^-last}} | {{/-last}}{{/vendorExtensions.x-rust-discriminator-values}} => serde_json::from_value(value)
+                .map(Self::{{{name}}})
+                .map_err(<D::Error as serde::de::Error>::custom),
+            {{/composedSchemas.oneOf}}
+            other => Err(<D::Error as serde::de::Error>::unknown_variant(other, VALUES)),
+        }
+    }
+}
+{{/oneOf.isEmpty}}
+{{#oneOf.isEmpty}}
 #[derive(Clone, Debug, PartialEq, Serialize, Deserialize)]
 #[serde(tag = "{{{propertyBaseName}}}")]
 pub enum {{{classname}}} {
@@ -101,18 +152,8 @@ pub enum {{{classname}}} {
     {{/vendorExtensions.x-rust-inline-variants}}
     {{/mappedModels}}
     {{/oneOf}}
-    {{^oneOf.isEmpty}}
-    {{#composedSchemas.oneOf}}
-    {{#description}}
-    /// {{{.}}}
-    {{/description}}
-    {{#baseName}}
-    #[serde(rename="{{{.}}}")]
-    {{/baseName}}
-    {{{name}}}({{#isModel}}{{^avoidBoxedModels}}Box<{{/avoidBoxedModels}}{{/isModel}}{{{dataType}}}{{#isModel}}{{^avoidBoxedModels}}>{{/avoidBoxedModels}}{{/isModel}}),
-    {{/composedSchemas.oneOf}}
-    {{/oneOf.isEmpty}}
 }
+{{/oneOf.isEmpty}}
 
 impl Default for {{classname}} {
     fn default() -> Self {

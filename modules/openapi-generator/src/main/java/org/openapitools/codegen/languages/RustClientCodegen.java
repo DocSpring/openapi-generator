@@ -290,17 +290,30 @@ public class RustClientCodegen extends AbstractRustCodegen implements CodegenCon
                             Collectors.mapping(Map.Entry::getKey, Collectors.toList())
                     ));
 
+            // A union names each variant after its schema, and the variant takes every discriminator value that maps
+            // to that schema (x-rust-discriminator-values, which the template's Deserialize matches): `gt` and `lt`
+            // can both be comparisons. Variants named after their values would all be renamed as soon as one schema
+            // got a second value. A schema the oneOf lists more than once still gets a variant per value.
+            Map<String, Long> refCounts = schemas.stream().map(Schema::get$ref).filter(Objects::nonNull)
+                    .collect(Collectors.groupingBy(Function.identity(), Collectors.counting()));
+
             for (int i = 0; i < newOneOfs.size(); i++) {
                 CodegenProperty oneOf = newOneOfs.get(i);
                 Schema schema = schemas.get(i);
 
-                if (mappedNamesByRef.containsKey(schema.get$ref())) {
+                if (mappedNamesByRef.containsKey(schema.get$ref()) && refCounts.get(schema.get$ref()) == 1) {
+                    List<String> names = mappedNamesByRef.get(schema.get$ref());
+                    oneOf.setBaseName(names.get(0));
+                    oneOf.setName(toModelName(ModelUtils.getSimpleRef(schema.get$ref())));
+                    oneOf.vendorExtensions.put("x-rust-discriminator-values", new ArrayList<>(names));
+                } else if (mappedNamesByRef.containsKey(schema.get$ref())) {
                     // prefer mapped names if present
                     // remove mapping not in order not to reuse for the next occurrence of the ref
                     List<String> names = mappedNamesByRef.get(schema.get$ref());
                     String mappedName = names.remove(0);
                     oneOf.setBaseName(mappedName);
                     oneOf.setName(toModelName(mappedName));
+                    oneOf.vendorExtensions.put("x-rust-discriminator-values", List.of(mappedName));
                 } else if (!org.apache.commons.lang3.StringUtils.isEmpty(schema.get$ref())) {
                     // use $ref if it's reference
                     String refName = ModelUtils.getSimpleRef(schema.get$ref());
@@ -308,6 +321,7 @@ public class RustClientCodegen extends AbstractRustCodegen implements CodegenCon
                         String modelName = toModelName(refName);
                         oneOf.setName(modelName);
                         oneOf.setBaseName(refName);
+                        oneOf.vendorExtensions.put("x-rust-discriminator-values", List.of(refName));
                     }
                 } else if (oneOf.isArray) {
                     // If the type is an array, extend the name with the inner type to prevent name collisions
