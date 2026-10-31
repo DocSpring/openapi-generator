@@ -560,6 +560,16 @@ public class GoClientCodegen extends AbstractGoCodegen {
                 }
             }
 
+            // A required property with a fixed value (x-const-value, like a union variant's discriminator) isn't a
+            // constructor argument: the constructor and ToMap write its value themselves
+            List<CodegenProperty> constructorVars = new ArrayList<>();
+            for (CodegenProperty var : model.requiredVars) {
+                if (!var.vendorExtensions.containsKey("x-const-value")) {
+                    constructorVars.add(var);
+                }
+            }
+            model.vendorExtensions.put("x-go-constructor-vars", constructorVars);
+
             // additional import for different cases
             boolean addedFmtImport = false;
 
