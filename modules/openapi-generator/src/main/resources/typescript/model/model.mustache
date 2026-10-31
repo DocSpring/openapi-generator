@@ -26,7 +26,7 @@ export class {{classname}} {{#parent}}extends {{{.}}} {{/parent}}{
     {{/deprecated}}
     */
 {{/description}}
-    '{{name}}'{{^required}}?{{/required}}: {{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{{dataType}}}{{/isEnum}}{{#isNullable}} | null{{/isNullable}};
+    '{{name}}'{{^required}}?{{/required}}: {{#vendorExtensions.x-const-value}}'{{{.}}}'{{/vendorExtensions.x-const-value}}{{^vendorExtensions.x-const-value}}{{#isEnum}}{{{datatypeWithEnum}}}{{/isEnum}}{{^isEnum}}{{>model/openEnumDataType}}{{/isEnum}}{{/vendorExtensions.x-const-value}}{{#isNullable}} | null{{/isNullable}};
 {{/vars}}
 
     {{#discriminator}}
@@ -112,13 +112,18 @@ export enum {{classname}}{{enumName}} {
 {{#isEnum}}
 {{#enumTypes}}
 {{#enum}}
-export enum {{classname}} {
+export const {{classname}} = {
     {{#allowableValues}}
     {{#enumVars}}
-    {{name}} = {{{value}}}{{^-last}},{{/-last}}
+    {{name}}: {{{value}}}{{^-last}},{{/-last}}
     {{/enumVars}}
     {{/allowableValues}}
-}
+} as const;
+/**
+* One of the values in the {{classname}} object. A response property can also have a value added to the API after this
+* client was released, so it's typed as {{classname}} | (string & {}).
+*/
+export type {{classname}} = (typeof {{classname}})[keyof typeof {{classname}}];
 {{/enum}}
 {{#stringUnion}}
     export type {{classname}} ={{#allowableValues}}{{#values}} "{{.}}" {{^-last}}|{{/-last}}{{/values}}{{/allowableValues}};
