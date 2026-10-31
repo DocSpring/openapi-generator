@@ -502,7 +502,43 @@ public class RustClientCodegen extends AbstractRustCodegen implements CodegenCon
             }
         }
         // process enum in models
-        return postProcessModelsEnum(objs);
+        ModelsMap processed = postProcessModelsEnum(objs);
+        for (ModelMap model : processed.getModels()) {
+            renameOpenEnumVarsThatClash(model.getModel());
+        }
+        return processed;
+    }
+
+    /**
+     * With openEnumTypes, a string enum keeps a value it doesn't know in its {@code Unknown(String)} variant
+     * (model.mustache), so a value whose own variant would also be named {@code Unknown} (the value {@code unknown})
+     * gets a Value suffix ({@code UnknownValue}), with a number when the enum already has that name.
+     */
+    @SuppressWarnings("unchecked")
+    private void renameOpenEnumVarsThatClash(CodegenModel cm) {
+        if (!cm.isEnum || cm.isInteger || cm.allowableValues == null
+                || !Boolean.parseBoolean(String.valueOf(additionalProperties.get("openEnumTypes")))) {
+            return;
+        }
+        List<Map<String, Object>> enumVars = (List<Map<String, Object>>) cm.allowableValues.get("enumVars");
+        if (enumVars == null) {
+            return;
+        }
+        Set<String> names = enumVars.stream().map(enumVar -> String.valueOf(enumVar.get("name")))
+                .collect(Collectors.toSet());
+        for (Map<String, Object> enumVar : enumVars) {
+            if (!"Unknown".equals(enumVar.get("name"))) {
+                continue;
+            }
+            String name = "UnknownValue";
+            for (int i = 2; names.contains(name); i++) {
+                name = "UnknownValue" + i;
+            }
+            LOGGER.info("{}: the value {} is named {}, as Unknown is the variant for values the enum doesn't know",
+                    cm.classname, enumVar.get("value"), name);
+            enumVar.put("name", name);
+            names.add(name);
+        }
     }
 
     @Override
