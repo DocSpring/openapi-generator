@@ -872,6 +872,14 @@ public class RustClientCodegen extends AbstractRustCodegen implements CodegenCon
                 if (param.isFreeFormObject && !param.isContainer) {
                     param.isPrimitiveType = true;
                 }
+
+                // A form parameter takes its type from the request body's property, which getTypeDeclaration has
+                // already written as `models::Name` for a model or an enum. The templates add `models::` themselves,
+                // so it became `models::models::Name`, which doesn't compile.
+                if (param.isFormParam && !param.isContainer && param.dataType != null
+                        && param.dataType.startsWith("models::")) {
+                    param.dataType = param.dataType.substring("models::".length());
+                }
             }
 
             if (operation.pathParams != null && operation.pathParams.size() > 0) {
