@@ -578,7 +578,14 @@ pub {{#supportAsync}}async {{/supportAsync}}fn {{{operationId}}}(configuration: 
     {{/supportAsync}}
     {{/isFile}}
     {{^isFile}}
+    {{#required}}
     req_builder = req_builder.json(&{{{vendorExtensions.x-rust-param-identifier}}});
+    {{/required}}
+    {{^required}}
+    if let Some(ref param_value) = {{{vendorExtensions.x-rust-param-identifier}}} {
+        req_builder = req_builder.json(param_value);
+    }
+    {{/required}}
     {{/isFile}}
     {{/bodyParams}}
     {{/hasBodyParam}}
