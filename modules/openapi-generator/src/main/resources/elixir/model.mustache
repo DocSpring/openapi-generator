@@ -1,5 +1,22 @@
 {{>licenseInfo}}
 {{#models}}{{#model}}defmodule {{moduleName}}.Model.{{classname}} do
+{{#isEnum}}
+  @moduledoc """
+  {{&description}}
+
+  A string. `values/0` lists the values this client knows: a newer API can return others, which are kept as they are.
+  """
+
+  @type t :: String.t()
+
+  @doc "The values this client knows"
+  @spec values() :: [String.t()]
+  def values, do: [{{#allowableValues}}{{#values}}"{{{.}}}"{{^-last}}, {{/-last}}{{/values}}{{/allowableValues}}]
+
+  def decode(value), do: value
+end
+{{/isEnum}}
+{{^isEnum}}
   @moduledoc """
   {{&description}}
   """
@@ -33,4 +50,5 @@
 {{/hasComplexVars}}
   end
 end
+{{/isEnum}}
 {{/model}}{{/models}}
