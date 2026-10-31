@@ -263,6 +263,24 @@ public class RustClientCodegen extends AbstractRustCodegen implements CodegenCon
         setLibrary(REQWEST_LIBRARY);
     }
 
+    // A model whose schema allows additional properties keeps the ones it doesn't list, in a flattened
+    // `additional_properties` map (x-rust-additional-properties, read by model.mustache). The core's
+    // isAdditionalPropertiesTrue can't tell: it's also set for an OpenAPI 3.1 `additionalProperties: false`, which
+    // parses as a boolean schema rather than a Boolean.
+    @Override
+    protected void setAddProps(Schema schema, IJsonSchemaValidationProperties property) {
+        super.setAddProps(schema, property);
+        if (!(property instanceof CodegenModel) || !((CodegenModel) property).isAdditionalPropertiesTrue) {
+            return;
+        }
+        Object additionalProperties = schema.getAdditionalProperties();
+        boolean closed = additionalProperties instanceof Schema
+                && Boolean.FALSE.equals(((Schema<?>) additionalProperties).getBooleanSchemaValue());
+        if (!closed) {
+            ((CodegenModel) property).vendorExtensions.put("x-rust-additional-properties", true);
+        }
+    }
+
     @Override
     public CodegenModel fromModel(String name, Schema model) {
         CodegenModel mdl = super.fromModel(name, model);
